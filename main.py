@@ -9,12 +9,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 import statsmodels.api as sm
 
-# 1. Configurare Streamlit
 st.set_page_config(page_title="Analiză Imobiliară King County", layout="wide")
 st.title("Analiza pieței imobiliare - King County, Washington")
 
-
-# Încărcarea datelor
 @st.cache_data
 def load_data():
     df = pd.read_csv("kc_house_data.csv")
@@ -23,7 +20,6 @@ def load_data():
 
 df = load_data()
 
-# Bara laterală pentru navigare
 st.sidebar.header("Meniu navigare")
 sectiune = st.sidebar.radio("Alege secțiunea:", [
     "1. Explorare si curatare date",
@@ -33,19 +29,16 @@ sectiune = st.sidebar.radio("Alege secțiunea:", [
     "5. Machine Learning (K-Means & Regresie)"
 ])
 
-#1 curatare si explorare
 if sectiune == "1. Explorare si curatare date":
     st.header("Explorarea si curatarea datelor")
     st.write("Primele 5 randuri din setul de date:")
     st.dataframe(df.head())
 
-    # Tratarea valorilor lipsa (Simulare/Forțare dacă exista)
     st.subheader("Tratarea valorilor lipsa")
     df['waterfront'] = df['waterfront'].fillna(0)
     df['view'] = df['view'].fillna(0)
     st.success("Valorile lipsa din 'waterfront' si 'view' au fost tratate completandu-le cu 0.")
 
-    # Tratarea valorilor extreme (Outliers) pt pret
     st.subheader("Tratarea valorilor extreme pentru pret")
     fig, ax = plt.subplots(figsize=(8, 3))
     sns.boxplot(x=df['price'], ax=ax, color='skyblue')
@@ -60,12 +53,11 @@ if sectiune == "1. Explorare si curatare date":
     st.success(f"S-au eliminat {len(df) - len(df_clean)} inregistrari cu preturi extreme (peste {limita_sup:,.0f}$)")
     st.write(f"Datele curatate au ramas cu {len(df_clean)} de randuri analizabile.")
 
-#2 agregari si statistici
 elif sectiune == "2. Agregari si statistici":
     st.header("Statistici, grupari si agregari (pandas)")
 
     st.subheader("Pretul mediu si calitatea in functie de conditia casei")
-    # Condiția casei este notată de la 1 la 5
+
     grup_conditie = df.groupby('condition').agg({
         'price': 'mean',
         'id': 'count',
@@ -79,17 +71,15 @@ elif sectiune == "2. Agregari si statistici":
     plt.title("Pretul mediu in functie de starea casei")
     st.pyplot(fig)
 
-#3 transformarti
 elif sectiune == "3. Transformari (Codificare & Scalare)":
     st.header("Pregatirea datelor")
 
-    # codificare
+
     st.subheader("1. Codificarea variabilelor categorice/nominale")
     st.write("Transformam starea casei (`condition`) în coloane Dummy (One-Hot Encoding):")
     df_encoded = pd.get_dummies(df, columns=['condition'], drop_first=True)
     st.dataframe(df_encoded[['price', 'condition_2', 'condition_3', 'condition_4', 'condition_5']].head())
 
-    # scalare
     st.subheader("2. Scalarea datelor (StandardScaler)")
     scaler = StandardScaler()
     coloane_de_scalat = ['price', 'sqft_living', 'bedrooms', 'bathrooms']
@@ -99,12 +89,10 @@ elif sectiune == "3. Transformari (Codificare & Scalare)":
     st.write("Datele scalate (Media devine 0, Deviatia Standard 1):")
     st.dataframe(df_scaled[coloane_de_scalat].head())
 
-#4analiza statistica
 elif sectiune == "4. Analiza spatiala (geopandas)":
     st.header(" Analiza spasiala cu geopandas")
     st.write("Transformam latitudinea si longitudinea intr-un format de geometrie spatiala.")
 
-    #esantion pentru viteza
     df_sample = df.sample(1500, random_state=42)
 
     geometry = [Point(xy) for xy in zip(df_sample['long'], df_sample['lat'])]
@@ -116,11 +104,9 @@ elif sectiune == "4. Analiza spatiala (geopandas)":
     st.subheader("Distributia spatiala a caselor")
     st.map(df_sample[['lat', 'long']])
 
-#5 machine learning
 elif sectiune == "5.Machine Learning (K-Means & Regresie)":
     st.header("Machine Learning & Modelare")
 
-    #curat datele
     df_ml = df.dropna(subset=['lat', 'long', 'price', 'sqft_living', 'bedrooms', 'bathrooms'])
 
     st.subheader("1. Segmentarea Zonelor (K-Means clusterizare din scikit-learn)")
